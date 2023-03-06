@@ -1,33 +1,47 @@
 <!DOCTYPE html>
 <html>
    <head>
-      <title>Voice Recognition Example</title>
+      <title>Exon AI</title>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
    </head>
    <body>
-      <h1>Voice Recognition Example</h1>
-      
-      
+      <h1>Exon AI</h1>
       <div id="output"></div>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/annyang/2.6.1/annyang.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/SpeechKITT/0.3.0/speechkitt.min.js"></script>
       <script>
          if (annyang) {
-         // Add our commands to annyang
-         annyang.addCommands({
-             'hello': function() { alert('Hello world!'); }
-         });
+            // Add our commands to annyang
+            var commands = {
+               'hello': function() { alert('Hello world!'); },
+               'ryan *text': function(text) {
+                  // Send the text to the Python script for processing
+                  var xhr = new XMLHttpRequest();
+                  console.log(text)
+                  xhr.open('POST', 'process_audio.py', true);
+                  xhr.setRequestHeader('Content-Type', 'application/json');
+                  xhr.onload = function() {
+                     if (xhr.status === 200) {
+                        // Display the output from the Python script
+                        document.getElementById('output').innerHTML = xhr.responseText;
+                     }
+                  };
+                  xhr.send(JSON.stringify({'text': text}));
+               }
+            };
+            annyang.addCommands(commands);
          
-         // Tell KITT to use annyang
-         SpeechKITT.annyang();
+            // Tell KITT to use annyang
+            SpeechKITT.annyang();
          
-         // Define a stylesheet for KITT to use
-         SpeechKITT.setStylesheet('https://cdnjs.cloudflare.com/ajax/libs/SpeechKITT/0.3.0/themes/flat.css');
+            // Define a stylesheet for KITT to use
+            SpeechKITT.setStylesheet('https://cdnjs.cloudflare.com/ajax/libs/SpeechKITT/0.3.0/themes/flat.css');
          
-         // Render KITT's interface
-         SpeechKITT.vroom();
+            // Render KITT's interface
+            SpeechKITT.vroom();
          }
       </script>
+    
    </body>
 </html>
