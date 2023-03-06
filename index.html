@@ -15,10 +15,11 @@
             // Add our commands to annyang
             var commands = {
                'hello': function() { alert('Hello world!'); },
-               'ryan *text': function(text) {
+               'process *text': function(text) {
                   // Send the text to the Python script for processing
-                  var xhr = new XMLHttpRequest();
                   console.log(text)
+                  var xhr = new XMLHttpRequest();
+                  
                   xhr.open('POST', 'process_audio.py', true);
                   xhr.setRequestHeader('Content-Type', 'application/json');
                   xhr.onload = function() {
