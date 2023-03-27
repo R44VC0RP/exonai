@@ -1,54 +1,31 @@
-Apologies for the confusion. It seems that the error occurs because `NSPersistentContainer` is not an `ObservableObject`. In this case, you should use `@State` instead of `@StateObject` in the `ContentView`. Here's how you can fix the issue:
+My apologies for the confusion. It seems I missed generating the `ClothingItemEntity` managed object class.
 
-1. Replace `@StateObject` with `@State` in `ContentView.swift`:
+Please follow these steps to generate the `ClothingItemEntity` class from your data model:
 
-```swift
-struct ContentView: View {
-    @State private var container = PersistenceController.shared.container
-    // ...
-}
-```
+1. Open your `.xcdatamodeld` file (e.g., `ClothingItemModel.xcdatamodeld`) in Xcode.
+2. Click on the entity you created earlier (e.g., `ClothingItemEntity`).
+3. In the right-hand panel, go to the "Data Model Inspector" tab (the rightmost tab with the "sliders" icon).
+4. Set "Codegen" to "Class Definition" (if it's not already selected).
+5. Go to `Product` > `Clean Build Folder` in Xcode's top menu to clean the build folder.
 
-2. Update the `ClosetView` to receive the `container` as a binding:
+Now, the `ClothingItemEntity` class should be automatically generated, and the error "cannot find 'ClothingItemEntity' in scope" should be resolved.
 
-```swift
-struct ClosetView: View {
-    @Binding var container: NSPersistentContainer
-    // ...
-}
-```
-
-3. Update the `ClosetView_Previews` to pass an instance of `NSPersistentContainer` as a binding:
+Regarding the "extra argument 'id' in call" error, it seems that there's a problem with the `ClothingItem` struct's initializer. Please make sure the `ClothingItem` struct's initializer matches the following code:
 
 ```swift
-struct ClosetView_Previews: PreviewProvider {
-    static var previews: some View {
-        ClosetView(container: .constant(PersistenceController.shared.container))
+struct ClothingItem: Identifiable, Equatable {
+    let id: UUID
+    let clothingname: String
+    let temperature: Double
+    var itemImageData: Data?
+
+    init(id: UUID, clothingname: String, temperature: Double, itemImageData: Data?) {
+        self.id = id
+        self.clothingname = clothingname
+        self.temperature = temperature
+        self.itemImageData = itemImageData
     }
 }
 ```
 
-4. Update the `ClothingItemDetails` view to receive the `container` as a binding:
-
-```swift
-struct ClothingItemDetails: View {
-    @Binding var container: NSPersistentContainer
-    // ...
-}
-```
-
-5. Update the `NavigationLink` in `ClosetView` to pass the `container` as a binding:
-
-```swift
-NavigationLink(destination: ClothingItemDetails(container: $container, item: item, itemImageData: item.itemImageData)) {
-    ClothingItemView(item: item, itemImageData: item.itemImageData)
-}
-```
-
-6. Update the `ClosetView` call in `ContentView` to pass the `container` as a binding:
-
-```swift
-ClosetView(container: $container)
-```
-
-After making these changes, the code should compile without issues. If you still encounter any problems, please let me know.
+After making these changes, please try building your project again. The errors should be resolved. If you still encounter any issues or need further assistance, please let me know.
