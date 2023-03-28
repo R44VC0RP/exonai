@@ -1,65 +1,63 @@
-From the code snippet you provided, I cannot find the CoreData setup for the `ClothingItemEntity`. However, I can help you set it up correctly. First, make sure you've created a CoreData data model file (`ClothingItemModel.xcdatamodeld`) containing the `ClothingItemEntity` entity with the following attributes:
+I have scanned the code and noticed that the CoreData setup is missing some crucial parts for loading, saving, and deleting data. Let's go through the issues and their solutions step by step:
 
-1. clothingname (type String)
-2. itemImageData (type Binary Data)
-3. temperature (type Double)
+1. The ClothingItem struct is not a CoreData entity. To work with CoreData, you should create a new CoreData entity named 'ClothingItemEntity' with the attributes you mentioned: clothingName (String), itemImageData (Binary Data), and temperature (Double). Make sure to create this entity in your CoreData model (ClothingItemModel.xcdatamodeld).
 
-If you haven't done that, open your Xcode project, go to `File > New > File...` and select `Data Model` under the Core Data category. Then, create the entity and add the attributes as mentioned above.
-
-Next, update your `PersistenceController` to match the name of the data model file:
+2. To load, save, and delete data, you need to create functions that interact with the CoreData container. Add the following functions to your project:
 
 ```swift
-init() {
-    container = NSPersistentContainer(name: "ClothingItemModel") // Make sure to use the name of your data model file
-    container.loadPersistentStores(completionHandler: { (storeDescription, error) in
-        if let error = error as NSError? {
-            fatalError("Unresolved error \(error), \(error.userInfo)")
-        }
-    })
-}
-```
-
-In your `ClosetView`, you need to change the way you load and save the clothing items to use CoreData instead of an array of `ClothingItem`. Here's an example of how you can achieve that:
-
-```swift
-// Add this fetch request to load clothing items from CoreData
-@FetchRequest(
-    entity: ClothingItemEntity.entity(),
-    sortDescriptors: [NSSortDescriptor(keyPath: \ClothingItemEntity.clothingname, ascending: true)]
-) private var clothingItems: FetchedResults<ClothingItemEntity>
-```
-
-Now, to save a new clothing item to CoreData, you can create a function like this:
-
-```swift
-func saveClothingItem(name: String, temperature: Double, imageData: Data) {
-    let newItem = ClothingItemEntity(context: container.viewContext)
-    newItem.clothingname = name
-    newItem.temperature = temperature
-    newItem.itemImageData = imageData
-
+func saveClothingItem(item: ClothingItem, container: NSPersistentContainer) {
+    let clothingItemEntity = ClothingItemEntity(context: container.viewContext)
+    clothingItemEntity.clothingName = item.clothingname
+    clothingItemEntity.itemImageData = item.itemImageData
+    clothingItemEntity.temperature = item.temperature
+    
     do {
         try container.viewContext.save()
     } catch {
-        print("Error saving new item: \(error.localizedDescription)")
+        print("Error saving item: \(error.localizedDescription)")
     }
 }
-```
 
-To delete a clothing item, you can use the following function:
-
-```swift
-func deleteClothingItem(item: ClothingItemEntity) {
-    container.viewContext.delete(item)
-
+func loadClothingItems(container: NSPersistentContainer) -> [ClothingItem] {
+    let fetchRequest: NSFetchRequest<ClothingItemEntity> = ClothingItemEntity.fetchRequest()
+    
     do {
-        try container.viewContext.save()
+        let clothingItemEntities = try container.viewContext.fetch(fetchRequest)
+        return clothingItemEntities.map({ entity -> ClothingItem in
+            return ClothingItem(clothingname: entity.clothingName ?? "", 
+                                temperature: entity.temperature, 
+                                itemImageData: entity.itemImageData)
+        })
+    } catch {
+        print("Error fetching items: \(error.localizedDescription)")
+        return []
+    }
+}
+
+func deleteClothingItem(item: ClothingItem, container: NSPersistentContainer) {
+    let fetchRequest: NSFetchRequest<ClothingItemEntity> = ClothingItemEntity.fetchRequest()
+    fetchRequest.predicate = NSPredicate(format: "clothingName == %@", item.clothingname)
+    
+    do {
+        let clothingItemEntities = try container.viewContext.fetch(fetchRequest)
+        if let clothingItemEntity = clothingItemEntities.first {
+            container.viewContext.delete(clothingItemEntity)
+            try container.viewContext.save()
+        }
     } catch {
         print("Error deleting item: \(error.localizedDescription)")
     }
 }
 ```
 
-Update the `AddItemView` and `ClothingItemDetails` to use the new `saveClothingItem` and `deleteClothingItem` functions accordingly.
+3. Update the `ClosetView` body to load the items when the view appears:
 
-With these changes, you should be able to fetch, save, and delete clothing items using CoreData. If you still encounter issues, please provide more details, such as logs or error messages, to help identify the problem.
+```swift
+VStack {
+    ...
+}.onAppear {
+    clothingItems = loadClothingItems(container: container)
+}
+```
+
+With these changes, your project should now work correctly with CoreData, allowing you to load, save, and delete clothing items.
