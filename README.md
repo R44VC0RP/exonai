@@ -1,35 +1,50 @@
-Apologies for the confusion. The `UIImageColors` pod provides only three colors: primary, secondary, and detail. If you want to get more colors from the image, you can use a different library or write your custom code to extract more colors.
+You can achieve this by using a `@State` property to store the selected color and updating it when the user taps on a color rectangle. Here's how you can modify the `AddItemView` to allow the user to select one of the colors:
 
-However, I'll show you an updated version of the previous code that displays the three colors provided by `UIImageColors`:
+1. Add a new state property to store the selected color:
 
 ```swift
-var body: some View {
-    NavigationView {
-        Group {
-            List {
-                Section {
-                    Text("Make sure that the image has enough light for our color detection to work.").font(.title2)
-                    if let selectedImage = selectedImage {
-                        VStack{
-                            Image(uiImage: selectedImage)
-                                .resizable()
-                                .scaledToFit()
-                                .cornerRadius(8)
-                                .frame(height: 200)
-                            if let colors = selectedImage.getColors() {
-                                Text("Primary Color: \(colors.primary.toHexString())")
-                                HStack {
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(Color(colors.primary))
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(Color(colors.secondary))
-                                    RoundedRectangle(cornerRadius: 4)
-                                        .fill(Color(colors.detail))
-                                }
-                                .frame(width: 50, height: 50)
-                            }
-                        }
-                    } // ... rest of the code
+@State private var selectedColor: UIColor?
 ```
 
-This will display the primary, secondary, and detail colors from the image in the form of color rectangles.
+2. Update the color rectangles to act as buttons and change the selected color when tapped:
+
+```swift
+if let colors = selectedImage.getColors() {
+    Text("Primary Color: \(selectedColor?.toHexString() ?? "N/A")")
+    HStack {
+        Button(action: { selectedColor = colors.primary }) {
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color(colors.primary))
+                .border(selectedColor == colors.primary ? Color.black : Color.clear)
+        }
+        Button(action: { selectedColor = colors.secondary }) {
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color(colors.secondary))
+                .border(selectedColor == colors.secondary ? Color.black : Color.clear)
+        }
+        Button(action: { selectedColor = colors.detail }) {
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color(colors.detail))
+                .border(selectedColor == colors.detail ? Color.black : Color.clear)
+        }
+    }
+    .frame(width: 50, height: 50)
+}
+```
+
+3. In the "Add" button's action, use the `selectedColor` instead of extracting the primary color again:
+
+```swift
+.navigationBarItems(leading: Button("Cancel") {
+    dismiss()
+}.foregroundColor(Color.cyan), trailing: Button("Add") {
+    let imageData = selectedImage?.jpegData(compressionQuality: 1.0)
+    
+    let newItem = ClothingItem(clothingname: selectedItem, temperature: temperatureRating, itemImageData: imageData, primaryColor: selectedColor)
+    
+    onAdd(newItem)
+    dismiss()
+}.foregroundColor(Color.cyan))
+```
+
+Now, the user can select one of the colors from the top three colors extracted from the image, and the selected color will be used as the primary color for the `ClothingItemEntity`. A black border will be displayed around the selected color to indicate the user's choice.
